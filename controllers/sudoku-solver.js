@@ -1,13 +1,13 @@
 class SudokuSolver {
   validate(puzzleString) {
     if (puzzleString.length !== 81) {
-      return false;
+      throw new Error("Expected puzzle to be 81 characters long");
     }
 
     const regex = /^[0-9.]$/;
     for (let c of puzzleString) {
       if (!regex.test(c)) {
-        return false;
+        throw new Error("Invalid characters in puzzle");
       }
     }
 
@@ -100,11 +100,41 @@ class SudokuSolver {
           currentColumnIndex === targetColumnIndex) ||
         (puzzleString[i] === `${value}` &&
           currentRegionIndex === targetRegionIndex &&
-          currentRowIndex !== targetRowIndex &&
-          currentColumnIndex !== targetColumnIndex)
+          (currentRowIndex !== targetRowIndex ||
+            currentColumnIndex !== targetColumnIndex))
       ) {
         return false;
       }
+    }
+
+    return true;
+  }
+
+  checkPlacement(puzzleString, row, column, value) {
+    this.validate(puzzleString);
+
+    const errorsArray = [];
+
+    const result1 = this.checkRowPlacement(puzzleString, row, column, value);
+
+    if (!result1) {
+      errorsArray.push("row");
+    }
+
+    const result2 = this.checkColPlacement(puzzleString, row, column, value);
+
+    if (!result2) {
+      errorsArray.push("column");
+    }
+
+    const result3 = this.checkRegionPlacement(puzzleString, row, column, value);
+
+    if (!result3) {
+      errorsArray.push("region");
+    }
+
+    if (errorsArray.length > 0) {
+      throw new Error(errorsArray);
     }
 
     return true;
@@ -233,14 +263,12 @@ class SudokuSolver {
   }
 
   solve(puzzleString) {
-    if (!this.validate(puzzleString)) {
-      return false;
-    }
+    this.validate(puzzleString);
 
     const isInSolvableState = this.testIfIsInSolvableState(puzzleString);
 
     if (!isInSolvableState) {
-      return false;
+      throw new Error("Puzzle cannot be solved");
     }
 
     let solutionString = puzzleString;
